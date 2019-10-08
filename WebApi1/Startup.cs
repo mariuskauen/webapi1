@@ -33,6 +33,8 @@ namespace WebApi1
         {
             services.AddDbContext<DataContext>(x => x.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
             services.AddScoped<IAuthRepository, AuthRepository>();
+            services.AddScoped<IUserRepository, UserRepository>();
+            services.AddScoped<IFriendRepository, FriendRepository>();
             services.AddCors();
             services.AddControllers();
             services.AddSignalR();
