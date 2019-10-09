@@ -83,6 +83,23 @@ namespace WebApi1.Controllers
             return await _friend.GetAllMyFriends(await GetUserId());
         }
 
+        [HttpGet("getonlinefriends")]
+        public async Task<List<FriendViewModel>> GetOnlineFriends()
+        {
+            List<FriendViewModel> onlineFriends = new List<FriendViewModel>();
+            onlineFriends = await _friend.GetAllMyFriends(await GetUserId());
+
+            foreach(FriendViewModel vm in onlineFriends)
+            {
+                if(vm.Online == false)
+                {
+                    onlineFriends.Remove(vm);
+                }
+            }
+
+            return onlineFriends;
+        }
+
         [HttpPost("addfriend/{receiverId}")]
         public async Task<IActionResult> SendFriendRequest(string receiverId)
         {

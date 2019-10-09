@@ -83,7 +83,8 @@ namespace WebApi1.Data
                         Id = friend.FriendTwoId,
                         Username = friend.FriendTwo.Username,
                         Firstname = friend.FriendTwo.Firstname,
-                        Lastname = friend.FriendTwo.Lastname
+                        Lastname = friend.FriendTwo.Lastname,
+                        Online = friend.FriendTwo.Online
                     };
 
                     friends.Add(vm);
@@ -98,7 +99,8 @@ namespace WebApi1.Data
                         Id = friend.FriendOneId,
                         Username = friend.FriendOne.Username,
                         Firstname = friend.FriendOne.Firstname,
-                        Lastname = friend.FriendOne.Lastname
+                        Lastname = friend.FriendOne.Lastname,
+                        Online = friend.FriendOne.Online
                     };
 
                     friends.Add(vm);

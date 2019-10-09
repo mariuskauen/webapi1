@@ -14,5 +14,7 @@ namespace WebApi1.Models.ViewModels
         public string Firstname { get; set; }
 
         public string Lastname { get; set; }
+
+        public bool Online { get; set; }
     }
 }

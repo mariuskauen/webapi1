@@ -37,5 +37,7 @@ namespace WebApi1.Models
         public ICollection<FriendShip> FriendsTwo { get; set; }
 
         public IEnumerable<FriendShip> Friends { get; set; }
+
+        public bool Online { get; set; }
     }
 }

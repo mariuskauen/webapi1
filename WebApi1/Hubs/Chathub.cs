@@ -3,33 +3,69 @@ using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
+using WebApi1.Data;
+using WebApi1.Models;
+using WebApi1.Models.ViewModels;
 
 namespace WebApi1.Hubs
 {
     public class Chathub : Hub
     {
-        public override Task OnConnectedAsync()
+        private readonly IFriendRepository _friend;
+        private readonly DataContext _context;
+
+        public Chathub(IFriendRepository friend, DataContext context)
         {
-            Clients.Client(Context.ConnectionId).SendAsync("Connected", "blabla");
-            return base.OnConnectedAsync();
+            _friend = friend;
+            _context = context;
+        }
+
+        List<FriendViewModel> friends = new List<FriendViewModel>();
+        string userId;
+        string username;
+
+        public override async Task OnConnectedAsync()
+        {
+            userId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            username = Context.User?.Identity?.Name;
+            friends = await _friend.GetAllMyFriends(userId);
+            foreach (FriendViewModel vm in friends)
+            {
+                await Clients.Group(vm.Username).SendAsync("FriendOnline", username);
+            }
+            _context.Users.FirstOrDefault(x => x.Id == userId).Online = true;
+            await _context.SaveChangesAsync();
+
+            await Clients.Client(Context.ConnectionId).SendAsync("Connected", "blabla");
+            await base.OnConnectedAsync();
+        }
+
+        public override async Task OnDisconnectedAsync(Exception exception)
+        {
+            userId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            username = Context.User?.Identity?.Name;
+            friends = await _friend.GetAllMyFriends(userId);
+            foreach (FriendViewModel vm in friends)
+            {
+                await Clients.Group(vm.Username).SendAsync("FriendOffline", username);
+            }
+            _context.Users.FirstOrDefault(x => x.Id == userId).Online = false;
+            await _context.SaveChangesAsync();
+            await base.OnDisconnectedAsync(exception);
         }
 
         public async Task AddToGroup(string token)
         {
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var userToken = tokenHandler.ReadToken(token) as JwtSecurityToken;
-            string groupName = userToken.Claims.FirstOrDefault(x => x.Type == "unique_name").Value;
-            
-            await Groups.AddToGroupAsync(Context.ConnectionId, groupName);
+            username = Context.User?.Identity?.Name;
+            await Groups.AddToGroupAsync(Context.ConnectionId, username);
         }
 
         public async Task SendMessage(Message message)
         {
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var userToken = tokenHandler.ReadToken(message.Token) as JwtSecurityToken;
-            message.Sender = userToken.Claims.FirstOrDefault(x => x.Type == "unique_name").Value;
-            message.SenderId = userToken.Claims.FirstOrDefault(x => x.Type == "nameid").Value;
+            message.Sender = Context.User?.Identity?.Name;
+            message.SenderId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             //await Clients.All.SendAsync("Message", message);
             await Clients.Group(message.Receiver).SendAsync("Message", message);
         }
