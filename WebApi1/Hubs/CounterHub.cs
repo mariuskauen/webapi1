@@ -8,9 +8,10 @@ namespace WebApi1.Hubs
 {
     public class CounterHub : Hub
     {
-        public async Task UpdateCounter(int i)
+        public async Task ButtonPressed(int i)
         {
-            await Clients.All.SendAsync("UpdateCounter", i);
+              await Clients.All.SendAsync("UpdateCounter", i);
+            }
+            
         }
-    }
 }

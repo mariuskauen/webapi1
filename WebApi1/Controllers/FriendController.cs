@@ -80,7 +80,6 @@ namespace WebApi1.Controllers
         [HttpGet("getallmyfriends")]
         public async Task<List<FriendViewModel>> GetAllMyFriends()
         {
-
             return await _friend.GetAllMyFriends(await GetUserId());
         }
 

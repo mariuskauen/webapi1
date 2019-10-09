@@ -58,7 +58,7 @@ namespace WebApi1
             }
 
             app.UseCors(builder =>
-                builder.WithOrigins("http://localhost:64524")
+                builder.WithOrigins("http://localhost:64524", "https://10.0.0.185:45460")
                     .AllowAnyMethod()
                     .AllowAnyHeader()
                     .AllowCredentials());
@@ -74,6 +74,7 @@ namespace WebApi1
             {
                 endpoints.MapControllers();
                 endpoints.MapHub<CounterHub>("/counterhub");
+                endpoints.MapHub<Chathub>("/chathub");
             });
         }
     }
