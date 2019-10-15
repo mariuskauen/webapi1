@@ -38,6 +38,29 @@ namespace WebApi1.Controllers
             return await _context.Users.ToListAsync();
         }
 
+        [HttpGet("searchforuser")]
+        public async Task<ActionResult<List<SearchUserViewModel>>> SearchForUser(string username)
+        {
+            List<SearchUserViewModel> userVm = new List<SearchUserViewModel>();
+            List<User> user = await _context.Users.Where(u => u.Username.StartsWith(username)).ToListAsync();
+
+            if (user == null)
+                return BadRequest();
+
+            foreach(User usr in user)
+            {
+                SearchUserViewModel vm = new SearchUserViewModel();
+                vm.UserId = usr.Id;
+                vm.Username = usr.Username;
+
+                userVm.Add(vm);
+            }
+
+            return userVm;
+
+        }
+
+
         [HttpGet("{id}")]
         public async Task<ActionResult<User>> GetUser(string id)
         {
