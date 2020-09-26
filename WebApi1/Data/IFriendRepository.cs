@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using WebApi1.Models;
 using WebApi1.Models.ViewModels;
 
 namespace WebApi1.Data
@@ -12,6 +13,12 @@ namespace WebApi1.Data
 
         Task<List<MyFriendRequestsViewModel>> GetMyRequests(string _userid);
 
-        Task<List<FriendViewModel>> GetAllMyFriends(string id);
+        List<FriendViewModel> GetAllMyFriends(string id);
+
+        bool CheckIfFriends(string userId, string receiverId);
+
+        FriendRequest GetRequestIfExists(string userId, string receiverId);
+
+        FriendShip MakeFriendship(string userId, string friendId);
     }
 }

@@ -19,95 +19,74 @@ namespace WebApi1.Data
 
         public async Task<List<MyFriendRequestsViewModel>> GetMyRequests(string _userid)
         {
-            MyFriendRequestsViewModel vm;
-            List<MyFriendRequestsViewModel> friendRequests = new List<MyFriendRequestsViewModel>();
-            var user = await _context.Users.Include(g => g.MyRequests).ThenInclude(MyRequests => MyRequests.Receiver).FirstOrDefaultAsync(x => x.Id == _userid);
-
-            var myRequests = user.MyRequests.ToList();
-            foreach (FriendRequest request in myRequests)
-            {
-                if (request.IsActive)
-                {
-                    vm = new MyFriendRequestsViewModel()
-                    {
-                        RequestId = request.Id,
-                        FriendId = request.ReceiverId,
-                        FriendName = request.Receiver.Username
-                    };
-
-                    friendRequests.Add(vm);
-                }
-            }
-            return friendRequests;
+            throw new NotImplementedException();
         }
 
         public async Task<List<MyFriendRequestsViewModel>> GetOthersRequests(string _userid)
         {
-            MyFriendRequestsViewModel vm;
-            List<MyFriendRequestsViewModel> friendRequests = new List<MyFriendRequestsViewModel>();
-            var user = await _context.Users.Include(g => g.OthersRequests).ThenInclude(OthersRequests => OthersRequests.Sender).FirstOrDefaultAsync(x => x.Id == _userid);
-
-            var othersRequests = user.OthersRequests.ToList();
-            foreach (FriendRequest request in othersRequests)
-            {
-                if (request.IsActive)
-                {
-                    vm = new MyFriendRequestsViewModel()
-                    {
-                        RequestId = request.Id,
-                        FriendId = request.SenderId,
-                        FriendName = request.Sender.Username
-                    };
-
-                    friendRequests.Add(vm);
-                }
-            }
-            return friendRequests;
+            throw new NotImplementedException();
         }
-        public async Task<List<FriendViewModel>> GetAllMyFriends(string id)
+        public List<FriendViewModel> GetAllMyFriends(string id)
         {
             List<FriendViewModel> friends = new List<FriendViewModel>();
-            var user = await _context.Users
-                .Include(r => r.FriendsOne)
-                .ThenInclude(g => g.FriendTwo)
-                .Include(s => s.FriendsTwo)
-                .ThenInclude(g => g.FriendOne)
-                .FirstOrDefaultAsync(f => f.Id == id);
-
-            foreach (FriendShip friend in user.FriendsOne)
+            List<FriendShip> friendships = _context.Friends.Where(z => z.Id.Contains(id) && z.IsFriends == true).ToList();
+            FriendViewModel vm;
+            foreach(FriendShip f in friendships)
             {
-                if (friend.IsFriends)
+                string userid;
+                int pos = f.Id.IndexOf(id);
+                if(pos == 0)
                 {
-                    FriendViewModel vm = new FriendViewModel()
+                    userid = f.Id.Remove(pos, id.Length + 1);
+                }
+                else
+                {
+                    userid = f.Id.Remove(pos - 1, id.Length + 1);
+                }
+                User friend = _context.Users.Where(z => z.Id == userid).FirstOrDefault();
+                if(friend != null)
+                {
+                    vm = new FriendViewModel()
                     {
-                        Id = friend.FriendTwoId,
-                        Username = friend.FriendTwo.Username,
-                        Firstname = friend.FriendTwo.Firstname,
-                        Lastname = friend.FriendTwo.Lastname,
-                        Online = friend.FriendTwo.Online
+                        Id = friend.Id,
+                        Username = friend.Username,
+                        Firstname = friend.Firstname,
+                        Lastname = friend.Lastname,
+                        Online = friend.Online
                     };
-
                     friends.Add(vm);
                 }
             }
-            foreach (FriendShip friend in user.FriendsTwo)
-            {
-                if (friend.IsFriends)
-                {
-                    FriendViewModel vm = new FriendViewModel()
-                    {
-                        Id = friend.FriendOneId,
-                        Username = friend.FriendOne.Username,
-                        Firstname = friend.FriendOne.Firstname,
-                        Lastname = friend.FriendOne.Lastname,
-                        Online = friend.FriendOne.Online
-                    };
-
-                    friends.Add(vm);
-                }
-            }
-
+            
             return friends;
+        }
+
+        public bool CheckIfFriends(string userId, string receiverId)
+        {
+            FriendShip friend = _context.Friends.Where(z => z.Id.Contains(userId) && z.Id.Contains(receiverId)).FirstOrDefault();
+            if (friend != null)
+                return true;
+            else
+                return false;
+
+        }
+
+        public FriendRequest GetRequestIfExists(string userId, string receiverId)
+        {
+            FriendRequest request = _context.FriendRequests.Where(z => z.Id.Contains(userId) && z.Id.Contains(receiverId)).FirstOrDefault();
+            return request;
+        }
+
+        public FriendShip MakeFriendship(string userId, string friendId)
+        {
+            FriendShip fs = new FriendShip()
+            {
+                Id = userId+":"+friendId,
+                IsFriends = true,
+                FriendsFrom = DateTime.Now
+            };
+
+            return fs;
         }
     }
 }

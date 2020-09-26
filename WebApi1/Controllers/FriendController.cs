@@ -27,73 +27,25 @@ namespace WebApi1.Controllers
         [HttpPost("acceptfriend/{requestId}")]
         public async Task<IActionResult> AcceptFriend(string requestId)
         {
-            var userId = HttpContext.User.Claims.FirstOrDefault(x => x.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier").Value;
-            User me = await _context.Users
-                .Include(t => t.FriendsTwo)
-                .Include(t => t.FriendsOne)
-                .Include(r => r.OthersRequests)
-                .ThenInclude(g => g.Sender)
-                .FirstOrDefaultAsync(z => z.Id == userId);
-
-            FriendRequest request = me.OthersRequests.FirstOrDefault(l => l.Id == requestId);
-            if (request == null)
-                return BadRequest("No such request");
-            if (!request.IsActive)
-                return BadRequest("Not active request");
-
-            User friend = request.Sender;
-
-            if (friend == null)
-                return BadRequest("No such user");
-
-            foreach (FriendShip f in me.Friends)
-            {
-                if (f.FriendTwoId == friend.Id || f.FriendOneId == friend.Id)
-                {
-                    f.IsFriends = true;
-                    request.IsActive = false;
-                    f.FriendsSince = DateTime.Now;
-                    await _context.SaveChangesAsync();
-                    return Ok();
-                }
-            }
-
-            FriendShip fs = new FriendShip()
-            {
-                FriendOne = friend,
-                FriendOneId = friend.Id,
-                FriendTwo = me,
-                FriendTwoId = me.Id,
-                IsFriends = true,
-                FriendsSince = DateTime.Now
-            };
-
-            friend.FriendsOne.Add(fs);
-            me.FriendsTwo.Add(fs);
-            request.IsActive = false;
-            await _context.SaveChangesAsync();
-
-
             return Ok();
         }
 
         [HttpGet("getallmyfriends")]
         public async Task<List<FriendViewModel>> GetAllMyFriends()
         {
-            return await _friend.GetAllMyFriends(await GetUserId());
+            return _friend.GetAllMyFriends(await GetUserId());
         }
 
         [HttpGet("getonlinefriends")]
         public async Task<List<FriendViewModel>> GetOnlineFriends()
         {
             List<FriendViewModel> onlineFriends = new List<FriendViewModel>();
-            onlineFriends = await _friend.GetAllMyFriends(await GetUserId());
 
-            foreach(FriendViewModel vm in onlineFriends)
+            foreach (FriendViewModel vm in _friend.GetAllMyFriends(await GetUserId()))
             {
-                if(vm.Online == false)
+                if (vm.Online == true)
                 {
-                    onlineFriends.Remove(vm);
+                    onlineFriends.Add(vm);
                 }
             }
 
@@ -103,33 +55,56 @@ namespace WebApi1.Controllers
         [HttpPost("addfriend/{receiverId}")]
         public async Task<IActionResult> SendFriendRequest(string receiverId)
         {
+            //Get receiver from id
             User receiver = await _context.Users.FirstOrDefaultAsync(u => u.Id == receiverId);
+
+            //Check if user exists
             if (receiver == null)
                 return BadRequest("No such user");
 
-            var userId = HttpContext.User.Claims.FirstOrDefault(x => x.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier").Value;
+            //Get own userid
+            var userId = GetUserId().Result;
+            //HttpContext.User.Claims.FirstOrDefault(x => x.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier").Value;
 
-            User sender = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+            //User me = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
 
-            List<FriendViewModel> myFriends = await _friend.GetAllMyFriends(userId);
-            foreach (FriendViewModel friendVm in myFriends)
+            bool isFriends = _friend.CheckIfFriends(userId, receiverId);
+            FriendRequest request = _friend.GetRequestIfExists(userId, receiverId);
+
+            if (isFriends)
+                return BadRequest("Allerede venner.");
+
+            if (request == null)
             {
-                if (friendVm.Id == receiver.Id)
-                    return BadRequest("You are already friends!");
+                request = new FriendRequest()
+                {
+                    Id = userId + ":" + receiverId,
+                    IsActive = true
+                };
+                _context.FriendRequests.Add(request);
+                await _context.SaveChangesAsync();
+
+                return Ok();
             }
 
-            FriendRequest request = new FriendRequest()
+            if (request.Id.StartsWith(userId) && request.IsActive == false)
             {
-                Id = Guid.NewGuid().ToString(),
-                SenderId = sender.Id,
-                Sender = sender,
-                Receiver = receiver,
-                ReceiverId = receiver.Id,
-                IsActive = true
-            };
-
-            sender.MyRequests.Add(request);
-            receiver.OthersRequests.Add(request);
+                request.IsActive = true;
+            }
+            else if (request.Id.StartsWith(receiverId) && request.IsActive == false)
+            {
+                request.Id = userId + ":" + receiverId;
+                request.IsActive = true;
+            }
+            else if (request.Id.StartsWith(userId) && request.IsActive == true)
+            {
+                return BadRequest("Request finnes allerede.");
+            }
+            else if (request.Id.StartsWith(receiverId) && request.IsActive == true)
+            {
+                _context.Friends.Add(_friend.MakeFriendship(userId, receiverId));
+                request.IsActive = false;
+            }
             await _context.SaveChangesAsync();
 
             return Ok();
@@ -159,28 +134,6 @@ namespace WebApi1.Controllers
         [HttpPost("deletemyfriend/{friendId}")]
         public async Task<IActionResult> DeleteFriend(string friendId)
         {
-            var user = await _context.Users.Include(z => z.FriendsOne).Include(z => z.FriendsTwo).FirstOrDefaultAsync(f => f.Id == GetUserId().Result);
-            FriendShip friendship = null;
-
-            foreach (FriendShip fs in user.Friends)
-            {
-                if (fs.FriendTwoId == friendId || fs.FriendOneId == friendId)
-                {
-                    friendship = fs;
-                    break;
-                }
-            }
-
-            if (friendship == null)
-                return BadRequest("Can't unfriended someone who isn't a friend");
-
-            if (!friendship.IsFriends)
-                return BadRequest("Buhu, this friend has already been unfriended");
-
-            friendship.IsFriends = false;
-
-            await _context.SaveChangesAsync();
-
             return Ok();
         }
 

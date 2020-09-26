@@ -22,18 +22,6 @@ namespace WebApi1.Data
             UserListViewModel vm = new UserListViewModel();
             var users = await _context.Users.ToListAsync();
 
-            //Denne funker ikke pga bug i entityframework core 3
-            var user = await _context.Users.Include(f => f.Friends).Include(h => h.MyRequests).Include(j => j.OthersRequests).FirstOrDefaultAsync(s => s.Id == userId);
-
-            foreach (User u in users)
-            {
-
-                vm.Id = user.Id;
-                vm.Firstname = user.Firstname;
-                vm.Lastname = user.Lastname;
-
-            }
-
             return userList;
         }
     }

@@ -30,7 +30,7 @@ namespace WebApi1.Hubs
         {
             userId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             username = Context.User?.Identity?.Name;
-            friends = await _friend.GetAllMyFriends(userId);
+            friends = _friend.GetAllMyFriends(userId);
             foreach (FriendViewModel vm in friends)
             {
                 await Clients.Group(vm.Username).SendAsync("FriendOnline", username);
@@ -46,7 +46,7 @@ namespace WebApi1.Hubs
         {
             userId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             username = Context.User?.Identity?.Name;
-            friends = await _friend.GetAllMyFriends(userId);
+            friends = _friend.GetAllMyFriends(userId);
             foreach (FriendViewModel vm in friends)
             {
                 await Clients.Group(vm.Username).SendAsync("FriendOffline", username);

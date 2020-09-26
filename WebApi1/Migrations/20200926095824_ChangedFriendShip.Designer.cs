@@ -3,15 +3,17 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using WebApi1.Data;
 
 namespace WebApi1.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20200926095824_ChangedFriendShip")]
+    partial class ChangedFriendShip
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -27,7 +29,12 @@ namespace WebApi1.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
+                    b.Property<string>("UserId")
+                        .HasColumnType("nvarchar(450)");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("FriendRequests");
                 });
@@ -43,7 +50,12 @@ namespace WebApi1.Migrations
                     b.Property<bool>("IsFriends")
                         .HasColumnType("bit");
 
+                    b.Property<string>("UserId")
+                        .HasColumnType("nvarchar(450)");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("Friends");
                 });
@@ -74,6 +86,20 @@ namespace WebApi1.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("WebApi1.Models.FriendRequest", b =>
+                {
+                    b.HasOne("WebApi1.Models.User", null)
+                        .WithMany("Requests")
+                        .HasForeignKey("UserId");
+                });
+
+            modelBuilder.Entity("WebApi1.Models.FriendShip", b =>
+                {
+                    b.HasOne("WebApi1.Models.User", null)
+                        .WithMany("Friends")
+                        .HasForeignKey("UserId");
                 });
 #pragma warning restore 612, 618
         }
